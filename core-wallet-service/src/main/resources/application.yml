@@ -2,12 +2,12 @@ server:
   port: 8081
 
 spring:
-  application:
-    name: core-wallet-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/walletdb
-    username: postgres
-    password: password  # Update to your postgres password if different
+    url: jdbc:postgresql://://render.com
+    username: walletdb_x87l_user
+    password: HH61TaAxzOWPts0Fe8U3bwdadscoCQDI
+    driver-class-name: org.postgresql.Driver
+ # Update to your postgres password if different
   jpa:
     hibernate:
       ddl-auto: update
