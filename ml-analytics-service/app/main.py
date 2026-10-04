@@ -31,19 +31,21 @@ class PredictionResponse(BaseModel):
     is_anomaly: bool
     anomaly_score: float
 
+import traceback
+
 @app.post("/api/v1/analytics/inspect", response_model=PredictionResponse)
 async def inspect_transaction(tx: TransactionData):
     try:
         features = np.array([[tx.amount, tx.hour_of_day]])
-        prediction = model.predict(features)
-        score = model.decision_function(features)
-        is_anomaly = True if prediction == -1 else False
-        
+        prediction = model.predict(features)[0]
+        score = model.decision_function(features)[0]
+        is_anomaly = bool(prediction == -1)
+
         return PredictionResponse(
             transaction_id=tx.transaction_id,
             is_anomaly=is_anomaly,
             anomaly_score=float(score)
         )
     except Exception as e:
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"ML Processing Error: {str(e)}")
-
