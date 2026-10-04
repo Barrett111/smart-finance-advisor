@@ -76,7 +76,7 @@ To protect the financial transaction routes from unauthenticated access or data 
 
 ---
 
-## 💡 Production Engineering Highlights (Interview Talking Points)
+## 💡 Production Engineering Highlights
 
 ### 1. Multi-Dimensional Behavior Anomaly Profiling
 Unlike primitive budget apps that rely on simple static maximum limits, the Python ML layer looks at structural feature relationships. For instance, a small transaction (₹650) executed past midnight (**Hour 0**) breaks regular daytime transactional boundaries (8 AM - 10 PM) and is successfully flagged as a behavioral anomaly. 
