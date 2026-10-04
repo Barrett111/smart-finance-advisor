@@ -1,5 +1,22 @@
 import React, { useState, useEffect } from 'react';
 
+const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:10000').replace(/\/$/, '');
+const API = `${API_URL}/api/v1`;
+
+const request = async (path, { method = 'GET', body, token } = {}) => {
+  const res = await fetch(`${API}${path}`, {
+    method,
+    headers: {
+      ...(body && { 'Content-Type': 'application/json' }),
+      ...(token && { Authorization: `Bearer ${token}` })
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  let data = null;
+  try { data = await res.json(); } catch { /* empty or non-JSON body */ }
+  return { res, data };
+};
+
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('wallet_token') || '');
   const [isLoginView, setIsLoginView] = useState(true);
@@ -15,6 +32,7 @@ export default function App() {
   const [query, setQuery] = useState('');
   const [aiResponse, setAiResponse] = useState('');
   const [loadingAi, setLoadingAi] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const saveToken = (newToken) => {
     localStorage.setItem('wallet_token', newToken);
@@ -39,21 +57,20 @@ export default function App() {
     }
 
     const endpoint = isLoginView ? 'login' : 'register';
+    setSubmitting(true);
     try {
-      const res = await fetch(`http://localhost:8081/api/v1/auth/${endpoint}`, {
+      const { res, data } = await request(`/auth/${endpoint}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: { username, password }
       });
-      const data = await res.json();
 
       if (!res.ok) {
-        setAuthError(data.error || 'Authentication failed.');
+        setAuthError(data?.error || `Authentication failed (HTTP ${res.status}).`);
         return;
       }
 
       if (isLoginView) {
-        if (data.token) {
+        if (data?.token) {
           saveToken(data.token);
           setUsername('');
           setPassword('');
@@ -66,31 +83,29 @@ export default function App() {
         setPassword('');
       }
     } catch (err) {
-      setAuthError('Failed to communicate with authentication server.');
+      console.error('Auth request failed:', err);
+      setAuthError(`Cannot reach server (${API_URL}). It may be waking up, so retry in a minute.`);
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const fetchTransactions = async () => {
     if (!token) return;
     try {
-      const res = await fetch('http://localhost:8081/api/v1/transactions', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.status === 401) {
+      const { res, data } = await request('/transactions', { token });
+      if (res.status === 401 || res.status === 403) {
         handleLogout();
         return;
       }
-      const data = await res.json();
-      setTransactions(Array.isArray(data) ? data.reverse() : []);
+      setTransactions(Array.isArray(data) ? [...data].reverse() : []);
     } catch (err) {
       console.error('Failed fetching transactions:', err);
     }
   };
 
   useEffect(() => {
-    if (token) {
-      fetchTransactions();
-    }
+    if (token) fetchTransactions();
   }, [token]);
 
   const handleAddTransaction = async (e) => {
@@ -98,15 +113,12 @@ export default function App() {
     if (!amount || !description || !token) return;
 
     try {
-      const res = await fetch('http://localhost:8081/api/v1/transactions', {
+      const { res } = await request('/transactions', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ amount: parseFloat(amount), description, category })
+        token,
+        body: { amount: parseFloat(amount), description, category }
       });
-      if (res.status === 401) {
+      if (res.status === 401 || res.status === 403) {
         handleLogout();
         return;
       }
@@ -125,20 +137,16 @@ export default function App() {
     setLoadingAi(true);
     setAiResponse('');
     try {
-      const res = await fetch('http://localhost:8081/api/v1/ai/chat', {
+      const { res, data } = await request('/ai/chat', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ query })
+        token,
+        body: { query }
       });
-      if (res.status === 401) {
+      if (res.status === 401 || res.status === 403) {
         handleLogout();
         return;
       }
-      const data = await res.json();
-      setAiResponse(data.response || data.error);
+      setAiResponse(data?.response || data?.error || `Request failed (HTTP ${res.status}).`);
     } catch (err) {
       setAiResponse('Error contacting your financial agent.');
     } finally {
@@ -169,8 +177,8 @@ export default function App() {
               <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#9ca3af', marginBottom: '4px', textTransform: 'uppercase' }}>Password</label>
               <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter password" style={{ width: '100%', padding: '12px', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', color: '#fff', boxSizing: 'border-box' }} />
             </div>
-            <button type="submit" style={{ width: '100%', padding: '12px', backgroundColor: isLoginView ? '#2563eb' : '#16a34a', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', marginTop: '8px' }}>
-              {isLoginView ? 'Unlock Wallet Server' : 'Create Identity Key'}
+            <button type="submit" disabled={submitting} style={{ width: '100%', padding: '12px', backgroundColor: isLoginView ? '#2563eb' : '#16a34a', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.6 : 1, marginTop: '8px' }}>
+              {submitting ? 'Please wait...' : isLoginView ? 'Unlock Wallet Server' : 'Create Identity Key'}
             </button>
           </form>
 
