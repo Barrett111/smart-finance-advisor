@@ -115,3 +115,4 @@ npm install
 npm run dev
 ```
 👉 Open your browser to **`http://localhost:3000`** to access the dashboard!
+🏃‍♂️ On Render : **`https://wallet-dashboard-8z52.onrender.com/`**
