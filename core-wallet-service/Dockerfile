@@ -8,5 +8,5 @@ FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 COPY --from=build /app/target/core-wallet-service-0.0.1-SNAPSHOT.jar app.jar
 EXPOSE 10000
-ENTRYPOINT ["java", "-Dspring.datasource.url=${SPRING_DATASOURCE_URL}", "-Dspring.datasource.username=${SPRING_DATASOURCE_USERNAME}", "-Dspring.datasource.password=${SPRING_DATASOURCE_PASSWORD}", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
 
