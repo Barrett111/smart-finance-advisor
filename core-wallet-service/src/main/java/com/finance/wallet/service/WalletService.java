@@ -19,8 +19,9 @@ public class WalletService {
     }
 
     @Transactional
-    public Transaction processTransaction(Double amount, String description, String category) {
+    public Transaction processTransaction(Double amount, String description, String category, String username) {
         Transaction transaction = new Transaction(amount, description, category, LocalDateTime.now());
+        transaction.setUsername(username);
         transaction = transactionRepository.save(transaction);
         MlPredictionResponse prediction = mlAnalyticsClient.evaluateTransaction(transaction);
         transaction.setIsAnomaly(prediction.getIs_anomaly());
@@ -28,7 +29,9 @@ public class WalletService {
         return transactionRepository.save(transaction);
     }
 
-    public List<Transaction> getAllTransactions() {
-        return transactionRepository.findAll();
+    public List<Transaction> getTransactionsFor(String username) {
+        return transactionRepository.findByUsername(username);
     }
+
+    
 }

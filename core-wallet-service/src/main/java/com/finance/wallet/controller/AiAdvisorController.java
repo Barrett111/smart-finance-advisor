@@ -2,13 +2,13 @@ package com.finance.wallet.controller;
 
 import com.finance.wallet.service.FinancialAdvisorService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/ai")
-@CrossOrigin(origins = "*")
 public class AiAdvisorController {
     private final FinancialAdvisorService advisorService;
 
@@ -17,7 +17,8 @@ public class AiAdvisorController {
     }
 
     @PostMapping("/chat")
-    public ResponseEntity<Map<String, String>> askAdvisor(@RequestBody Map<String, String> payload) {
+    public ResponseEntity<Map<String, String>> askAdvisor(@RequestBody Map<String, String> payload,
+                                                          Authentication auth) {
         Map<String, String> responseMap = new HashMap<>();
         try {
             String userQuery = payload.get("query");
@@ -26,13 +27,12 @@ public class AiAdvisorController {
                 return ResponseEntity.badRequest().body(responseMap);
             }
 
-            String aiResponse = advisorService.analyzeFinancesAndRespond(userQuery);
-            
-            // Protect against empty/null responses from AI
+            String aiResponse = advisorService.analyzeFinancesAndRespond(userQuery, auth.getName());
+
             if (aiResponse == null || aiResponse.trim().isEmpty()) {
                 aiResponse = "The AI model returned an empty response. Please verify your API Key and connectivity.";
             }
-            
+
             responseMap.put("response", aiResponse);
             return ResponseEntity.ok(responseMap);
 

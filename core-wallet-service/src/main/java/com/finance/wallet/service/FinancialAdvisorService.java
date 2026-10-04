@@ -22,9 +22,8 @@ public class FinancialAdvisorService {
         this.geminiApiKey = geminiApiKey;
     }
 
-    public String analyzeFinancesAndRespond(String userQuery) {
-        // 1. Build a local database context window from your PostgreSQL transactional ledger
-        List<Transaction> transactions = transactionRepository.findAll();
+    public String analyzeFinancesAndRespond(String userQuery, String username) {
+    List<Transaction> transactions = transactionRepository.findByUsername(username);
         String ledgerContext = transactions.stream()
                 .map(tx -> String.format("ID: %s, Amount: ₹%.2f, Desc: %s, Cat: %s, Anomaly: %b",
                         tx.getId(), tx.getAmount(), tx.getDescription(), tx.getCategory(), tx.getIsAnomaly()))
