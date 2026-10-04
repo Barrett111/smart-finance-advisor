@@ -21,7 +21,7 @@ gemini:
 
 services:
   ml-analytics:
-    url: ${SERVICES_ML_ANALYTICS_URL:http://localhost:8000}
+    url: ${SERVICES_ML_ANALYTICS_URL:http://localhost:10000}
 
 
 
